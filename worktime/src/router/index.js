@@ -12,6 +12,9 @@ import teamStatistics from "@/components/team/team_statistics"
 export default new Router({
   routes: [
       {
+          path: '/',
+          redirect: '/team_attendance'
+      },{
           path: '/team_attendance',
           component: teamAttendance
       }, {
