@@ -7,6 +7,7 @@
                         placeholder="请输入姓名"
                         suffix-icon="el-icon-search"
                         v-model="userName"
+                        size="small"
                         @change="searchUserName">
                     </el-input>
                 </div>
@@ -24,6 +25,7 @@
                         format="yyyy-MM-dd"
                         value-format="yyyy-MM-dd"
                         @change="searchUserDate"
+                        size="small"
                         :picker-options="pickerOptions">
                     </el-date-picker>
                 </div>
@@ -33,6 +35,7 @@
                     <el-button
                         type="primary"
                         icon="el-icon-bell"
+                        size="small"
                         @click="infoNotify"
                         :disabled="selectionItem.length === 0? true: false">
                         发送提醒
@@ -50,7 +53,8 @@
             :default-sort = "{prop: 'attendance_date', order: 'descending'}"
             >
             <el-table-column
-                type="selection">
+                type="selection"
+                :selectable="selectedRow">
             </el-table-column>
             <el-table-column
                 prop="user_name"
@@ -108,7 +112,8 @@
                         </el-button>
                         <el-button
                             icon="el-icon-more"
-                            size="small">
+                            size="small"
+                            @click="openDisplayInfo(scope.row)">
                         </el-button>
                     </el-button-group>
                 </template>
@@ -128,26 +133,34 @@
             :visible.sync="editDialogVisible"
             width="50%"
             :before-close="editHandleClose">
-            <el-row :gutter="20">
-                <el-col :span="3" :offset="4">
-                    <div class="">
+            <el-row
+                :gutter="20"
+                class='statusEdit'>
+                <el-col :span="4" :offset="3">
+                    <div >
                         原始状态
                     </div>
                 </el-col>
-                <el-col :span="17">
+                <el-col :span="16">
                     <div class="">
                         {{oldStatus}}
                     </div>
                 </el-col>
             </el-row>
-            <el-row :gutter="20">
-                <el-col :span="3" :offset="4">
-                    <div class="">
+            <el-row
+                :gutter="20"
+                class='statusEdit'>
+                <el-col :span="4" :offset="3">
+                    <div class="editStatusDistance">
                         更改状态
                     </div>
                 </el-col>
-                <el-col :span="17">
-                    <el-select v-model="newStatus" placeholder="请选择">
+                <el-col :span="16">
+                    <el-select
+                        v-model="newStatus"
+                        placeholder="请选择"
+                        size="small"
+                        class="changeStatus">
                         <el-option
                           v-for="item in statusOptions"
                           :key="item.value"
@@ -157,10 +170,74 @@
                     </el-select>
                 </el-col>
             </el-row>
+            <el-row
+                :gutter="20"
+                class='statusEdit'
+                v-if="newStatus === '补打卡'">
+                <el-col :span="4" :offset="3">
+                    <div class="editStatusDistance">
+                        打卡时间
+                    </div>
+                </el-col>
+                <el-col :span="16">
+                    <el-time-picker
+                        is-range
+                        v-model="patchTime"
+                        range-separator="～"
+                        start-placeholder="开始时间"
+                        end-placeholder="结束时间"
+                        placeholder="选择打卡时间"
+                        format="HH:mm"
+                        value-format="HH:mm"
+                        size="small"
+                        @change="handlePatchTime">
+                    </el-time-picker>
+                </el-col>
+            </el-row>
             <span slot="footer" class="dialog-footer">
-                <el-button @click="editDialogVisible = false">取 消</el-button>
-                <el-button type="primary" @click="editDialogVisible = false">确 定</el-button>
+                <el-button @click="editHandleClose">取 消</el-button>
+                <el-button type="primary" @click="submitEditDialog">确 定</el-button>
             </span>
+        </el-dialog>
+        <el-dialog
+            :title="userAttendanceName + ' 出勤详情'"
+            :visible.sync="displayDialogVisible"
+            width="50%"
+            :before-close="displayHandleClose">
+            <el-table
+                :data="displayTableData"
+                stripe
+                class="displayTable"
+                style="width: 100%">
+                <el-table-column
+                    prop="attendance_date"
+                    label="日期"
+                    align="center">
+                </el-table-column>
+                <el-table-column
+                    label="打卡记录"
+                    align="center">
+                    <template slot-scope="scope">
+                        <span>{{scope.row.updated_start_time}}</span>
+                        <span>--</span>
+                        <span>{{scope.row.updated_end_time}}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column
+                    label="工作时长"
+                    align="center">
+                        <span slot-scope="scope">{{(scope.row.updated_duration/3600).toFixed(1)}}</span>
+                </el-table-column>
+            </el-table>
+            <el-pagination
+                @size-change="handleSizeChange"
+                @current-change="handleCurrentChange"
+                :current-page="displaycurrentPage"
+                :page-sizes="[5, 10, 20]"
+                :page-size="10"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="40">
+            </el-pagination>
         </el-dialog>
     </div>
 </template>
@@ -184,15 +261,25 @@ export default {
             //原始状态
             oldStatus: '',
             // 新状态
-            newStatus: '',
+            newStatus: '补打卡',
+            // 确定修改哪行
+            editId: '',
             //状态选择器内备选项
             statusOptions: [{
-                value: 'patch',
+                value: '补打卡',
                 label: '补打卡'
             },{
-                value: 'timeoff',
+                value: '请假',
                 label: '请假'
             }],
+            //出勤详情的名字
+            userAttendanceName: '',
+            //个人出勤详情对话框
+            displayDialogVisible: false,
+            //展示个人出勤详情的当前页
+            displaycurrentPage: 1,
+            //打卡时间初始值
+            patchTime: ["08:00","08:00"],
             //日历选择器的快捷选项
             pickerOptions: {
                 shortcuts: [{
@@ -221,6 +308,105 @@ export default {
                 }
                 }]
             },
+            //个人出勤详情的数据
+            displayTableData: [{
+                "attendance_date": "2018-05-30",
+                "create_time": 1527647626,
+                "email": "xiaotao.lei@ihandysoft.com",
+                "id": "xiaotao.lei@ihandysoft.com2018-05-30",
+                "is_changed": true,
+                "original_duration": 45972,
+                "status": "normal",
+                "update_time": 1527665339,
+                "updated_duration": 45972,
+                "updated_end_time": "21:21",
+                "updated_start_time": "07:34",
+                "workday": 0
+                },
+                {
+                "attendance_date": "2018-05-29",
+                "create_time": 1527667635,
+                "email": "xiaotao.lei@ihandysoft.com",
+                "id": "xiaotao.lei@ihandysoft.com2018-05-29",
+                "is_changed": true,
+                "original_duration": 45972,
+                "status": "normal",
+                "update_time": 1527667635,
+                "updated_duration": 45972,
+                "updated_end_time": "21:21",
+                "updated_start_time": "07:34",
+                "workday": 1
+                },
+                {
+                "attendance_date": "2018-05-28",
+                "create_time": 1527561778,
+                "email": "xiaotao.lei@ihandysoft.com",
+                "id": "xiaotao.lei@ihandysoft.com2018-05-28",
+                "is_changed": true,
+                "original_duration": 0,
+                "status": "exchange",
+                "update_time": 1527561778,
+                "updated_duration": 0,
+                "updated_end_time": "",
+                "updated_start_time": "",
+                "workday": 1
+                },
+                {
+                "attendance_date": "2018-05-26",
+                "create_time": 1527647620,
+                "email": "xiaotao.lei@ihandysoft.com",
+                "id": "xiaotao.lei@ihandysoft.com2018-05-26",
+                "is_changed": false,
+                "original_duration": 36587,
+                "status": "normal",
+                "update_time": 1527647620,
+                "updated_duration": 36587,
+                "updated_end_time": "20:33",
+                "updated_start_time": "09:23",
+                "workday": 1
+                },
+                {
+                "attendance_date": "2018-05-25",
+                "create_time": 1527647618,
+                "email": "xiaotao.lei@ihandysoft.com",
+                "id": "xiaotao.lei@ihandysoft.com2018-05-25",
+                "is_changed": false,
+                "original_duration": 38330,
+                "status": "normal",
+                "update_time": 1527647618,
+                "updated_duration": 38330,
+                "updated_end_time": "21:09",
+                "updated_start_time": "09:30",
+                "workday": 1
+                },
+                {
+                "attendance_date": "2018-05-24",
+                "create_time": 1527647614,
+                "email": "xiaotao.lei@ihandysoft.com",
+                "id": "xiaotao.lei@ihandysoft.com2018-05-24",
+                "is_changed": false,
+                "original_duration": 38741,
+                "status": "normal",
+                "update_time": 1527647614,
+                "updated_duration": 38741,
+                "updated_end_time": "21:17",
+                "updated_start_time": "09:31",
+                "workday": 1
+                },
+                {
+                "attendance_date": "2018-05-23",
+                "create_time": 1527647611,
+                "email": "xiaotao.lei@ihandysoft.com",
+                "id": "xiaotao.lei@ihandysoft.com2018-05-23",
+                "is_changed": false,
+                "original_duration": 40214,
+                "status": "patch",
+                "update_time": 1527647611,
+                "updated_duration": 40214,
+                "updated_end_time": "21:43",
+                "updated_start_time": "09:32",
+                "workday": 1
+                }],
             //模拟表格数据
             tableData: [
                 {
@@ -383,6 +569,7 @@ export default {
                 "user_name": "\u674e\u5a9b",
                 "workday": 1
             }]
+
         }
     },
     methods: {
@@ -589,14 +776,56 @@ export default {
             console.log(item);
             this.editDialogVisible = true;
             this.oldStatus = item.status;
+            this.editId = item.id;
             console.log('打开编辑对话框');
         },
         //关闭对话框之前，先清空数据，最后关闭对话框
         editHandleClose() {
             this.oldStatus = '';
+            this.newStatus = '补打卡';
+            this.patchTime = ["08:00","08:00"];
             this.editDialogVisible = false;
             console.log('退出编辑对话框');
-        }
+        },
+        //修改确定时
+        submitEditDialog() {
+            for (var i = 0; i < this.tableData.length; i++) {
+                if (this.editId === this.tableData[i].id) {
+                    console.log(this.patchTime);
+                    this.tableData[i].updated_start_time = this.patchTime[0];
+                    this.tableData[i].updated_end_time = this.patchTime[1];
+                    this.tableData[i].status = this.newStatus;
+                }
+            }
+            this.editHandleClose();
+            console.log("");
+        },
+        //当打卡时间变化时，触发的事件
+        handlePatchTime(item) {
+           console.log(item);
+       },
+       //只有状态为异常时，复选框才可以勾选
+       selectedRow(row,index) {
+           // console.log(index);
+           return (row.status === '异常');
+       },
+       //展示个人的出勤详情
+       openDisplayInfo(item) {
+           this.userAttendanceName = item.user_name;
+           this.displayDialogVisible = true;
+       },
+       //关闭个人出勤详情页面
+       displayHandleClose() {
+           this.userAttendanceName = '';
+           this.displaycurrentPage = 1;
+           this.displayDialogVisible = false;
+       },
+       handleSizeChange() {
+           console.log("改变了每页的个数");
+       },
+       handleCurrentChange() {
+           console.log("跳转页数");
+       }
     }
 }
 </script>
@@ -610,5 +839,17 @@ export default {
 }
 .blue {
     color: #409EFF;
+}
+.statusEdit {
+    padding-bottom: 20px;
+}
+.changeStatus {
+    width: 350px;
+}
+.editStatusDistance {
+    padding-top: 7px;
+}
+.displayTable {
+    margin-bottom: 40px;
 }
 </style>
