@@ -35,8 +35,7 @@
             :data="tableData"
             stripe
             style="width: 100%"
-            class="editDialog"
-            size="small">
+            class="editDialog">
             <el-table-column
                 prop="user_name"
                 label="姓名"
@@ -45,7 +44,7 @@
             <el-table-column
                 label="请假起止日期"
                 align="center"
-                min-width="140">
+                min-width="190">
                 <template slot-scope="scope">
                     <span>{{scope.row.timeoff_date[0]}}</span>
                     <span>--</span>
@@ -60,7 +59,7 @@
             <el-table-column
                 label="预计补班日期"
                 align="center"
-                min-width="160">
+                min-width="180">
                 <template slot-scope="scope">
                     <span>{{scope.row.expect_exchange_date.length === 0 ? ' 无': scope.row.expect_exchange_date.join('/')}}</span>
                 </template>
@@ -81,7 +80,8 @@
             <el-table-column
                 label="操作"
                 align="center"
-                fixed="right">
+                fixed="right"
+                width="140">
                 <template slot-scope="scope">
                     <el-button-group>
                         <el-button
@@ -97,6 +97,15 @@
                 </template>
             </el-table-column>
         </el-table>
+        <el-pagination
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="currentPage"
+            :page-sizes="[5, 10, 20]"
+            :page-size="100"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="10">
+        </el-pagination>
     </div>
 </template>
 
@@ -138,6 +147,8 @@ export default {
             },
             //表格临时数据
             temp: [],
+            //当前页数
+            currentPage: 1,
             //表格数据
             tableData: [{
                 "actual_exchange_date": [],
@@ -413,6 +424,14 @@ export default {
             }).catch(() => {
 
             });
+        },
+        //每页的数量发生改变时
+        handleSizeChange(item) {
+            console.log(item);
+        },
+        //跳转到某页
+        handleCurrentChange(item) {
+            console.log(item)
         }
     }
 }
