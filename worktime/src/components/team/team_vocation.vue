@@ -91,7 +91,8 @@
                         </el-button>
                         <el-button
                             icon="el-icon-more"
-                            size="small">
+                            size="small"
+                            @click="displayVocationInfo(scope.row)">
                         </el-button>
                     </el-button-group>
                 </template>
@@ -106,6 +107,46 @@
             layout="total, sizes, prev, pager, next, jumper"
             :total="10">
         </el-pagination>
+        <el-dialog
+            :title="displayUseName + ' 假期详情'"
+            :visible.sync="dialogTableVisible">
+            <el-table
+                :data="gridData">
+                <el-table-column
+                    label="请假日期"
+                    align="center">
+                    <template slot-scope="scope">
+                        <span>{{scope.row.timeoff_date[0]}}</span>
+                        <span>--</span>
+                        <span>{{scope.row.timeoff_date[1]}}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column
+                    label="请假天数"
+                    prop="timeoff_days"
+                    align="center">
+                </el-table-column>
+                <el-table-column
+                    label="请假类型"
+                    prop="timeoff_type"
+                    align="center">
+                </el-table-column>
+                <el-table-column
+                    label="预计补班日期"
+                    align="center">
+                    <template slot-scope="scope">
+                        {{scope.row.expect_exchange_date.length === 0 ? '无': scope.row.expect_exchange_date.join('/')}}
+                    </template>
+                </el-table-column>
+                <el-table-column
+                    label="实际补班日期"
+                    align="center">
+                    <template slot-scope="scope">
+                        {{scope.row.actual_exchange_date.length === 0 ? '无': scope.row.actual_exchange_date.join('/')}}
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-dialog>
     </div>
 </template>
 
@@ -149,6 +190,87 @@ export default {
             temp: [],
             //当前页数
             currentPage: 1,
+            // 假期详情个人姓名
+            displayUseName: '',
+            //展示个人假期详情
+            dialogTableVisible: false,
+            //个人假期数据
+            gridData: [{
+                "actual_exchange_date": [
+                  "2018-05-30",
+                  "2018-05-30"
+                ],
+                "actual_exchange_days": 0,
+                "create_time": "Thu, 31 May 2018 08:05:56 GMT",
+                "desc": null,
+                "division": "030",
+                "email": "kengyu.chen@ihandysoft.com",
+                "expect_exchange_date": [],
+                "expect_exchange_days": 0,
+                "is_approval_timeoff": "yes",
+                "is_canceled": "no",
+                "is_confirm_exchange": false,
+                "is_paid": "no",
+                "primary_id": "64944475787192571532",
+                "timeoff_date": [
+                  "2018-05-30",
+                  "2018-05-30"
+                ],
+                "timeoff_days": 1,
+                "timeoff_type": "\u4e8b\u5047",
+                "update_time": "Thu, 31 May 2018 08:05:56 GMT",
+                "user_name": "\u9648\u94ff\u5b87"
+                },
+                {
+                "actual_exchange_date": [],
+                "actual_exchange_days": 0,
+                "create_time": "Wed, 23 May 2018 02:18:07 GMT",
+                "desc": null,
+                "division": "030",
+                "email": "kengyu.chen@ihandysoft.com",
+                "expect_exchange_date": [],
+                "expect_exchange_days": 0,
+                "is_approval_timeoff": "yes",
+                "is_canceled": "no",
+                "is_confirm_exchange": false,
+                "is_paid": "yes",
+                "primary_id": "36551545845391436782",
+                "timeoff_date": [
+                  "2018-05-16",
+                  "2018-05-17"
+                    ],
+                "timeoff_days": 2,
+                "timeoff_type": "\u5e74\u5047",
+                "update_time": "Wed, 23 May 2018 02:18:07 GMT",
+                "user_name": "\u9648\u94ff\u5b87"
+                },
+                {
+                "actual_exchange_date": [],
+                "actual_exchange_days": 0,
+                "create_time": "Thu, 17 May 2018 02:48:42 GMT",
+                "desc": null,
+                "division": "030",
+                "email": "kengyu.chen@ihandysoft.com",
+                "expect_exchange_date": [
+                  "2018-05-30",
+                  "2018-05-30"
+                ],
+                "expect_exchange_days": 0,
+                "is_approval_timeoff": "yes",
+                "is_canceled": "no",
+                "is_confirm_exchange": true,
+                "is_paid": "no",
+                "primary_id": "42613744529452872256",
+                "timeoff_date": [
+                  "2018-04-28",
+                  "2018-04-28"
+                    ],
+                "timeoff_days": 1,
+                "timeoff_type": "\u4e8b\u5047",
+                "update_time": "Wed, 30 May 2018 02:38:51 GMT",
+                "user_name": "\u9648\u94ff\u5b87"
+                }
+            ],
             //表格数据
             tableData: [{
                 "actual_exchange_date": [],
@@ -432,6 +554,11 @@ export default {
         //跳转到某页
         handleCurrentChange(item) {
             console.log(item)
+        },
+        //点击按钮，展示个人假期详情
+        displayVocationInfo(item) {
+            this.displayUseName = item.user_name;
+            this.dialogTableVisible = true;
         }
     }
 }
